@@ -29,59 +29,58 @@ __global__ void run_vbo_kernel(float4 *pos, Object* d_objects, float time)
     	pos[idx].z+speed.z*time,1.0f);
 }
 
-void find_CellID(Object *d_objects, int *cellids, int* objectIds, float CELL_SIZE){
-    int X_SHIFT = 10, Y_SHIFT = 10, Z_SHIFT = 10;
-    // int idx = blockIdx.x*blockDim.x + threadIdx.x;
-    for(int idx = 0; idx<OBJECT_COUNT; idx++){
-		cellids[8*idx] = 1 << 31 + ((int)(d_objects[idx].centroid.x / CELL_SIZE) << X_SHIFT + 
-								(int)(d_objects[idx].centroid.y / CELL_SIZE) << Y_SHIFT +
-								(int)(d_objects[idx].centroid.z / CELL_SIZE) << Z_SHIFT);  
+void find_CellID(Object* d_objects, int *cellids, int* objectIds, float CELL_SIZE, int size){
+    int X_SHIFT = 21, Y_SHIFT =11, Z_SHIFT = 1;
+    for (int idx = 0; idx<size; idx++){
+		cellids[8*idx] =  ((uint8_t)(d_objects[idx].centroid.x / CELL_SIZE) << X_SHIFT |
+								(uint8_t)(d_objects[idx].centroid.y / CELL_SIZE) << Y_SHIFT |
+								(uint8_t)(d_objects[idx].centroid.z / CELL_SIZE) << Z_SHIFT);  
 		objectIds[8*idx] = idx; 
 
-		int temp = ((int)(d_objects[idx].bV.u_f_r.x / CELL_SIZE) << X_SHIFT + 
-					(int)(d_objects[idx].bV.u_f_r.y / CELL_SIZE) << Y_SHIFT +
-					(int)(d_objects[idx].bV.u_f_r.z / CELL_SIZE) << Z_SHIFT);
+		int temp = ((uint8_t)(d_objects[idx].bV.u_f_r.x / CELL_SIZE) << X_SHIFT | 
+					(uint8_t)(d_objects[idx].bV.u_f_r.y / CELL_SIZE) << Y_SHIFT |
+					(uint8_t)(d_objects[idx].bV.u_f_r.z / CELL_SIZE) << Z_SHIFT);
 
-		cellids[8*idx+1] = 0 << 31 + temp*(~(temp ^ (cellids[8*idx] & 0x7FFFFFFF))&1);
+	// temp*(~(temp ^ (cellids[8*idx] & 0x7FFFFFFF))&1)
+		cellids[8*idx+1] = 1 | temp;
 		objectIds[8*idx+1] = idx;
 
-		temp = ((int)(d_objects[idx].bV.u_f_l.x / CELL_SIZE) << X_SHIFT + 
-					(int)(d_objects[idx].bV.u_f_l.y / CELL_SIZE) << Y_SHIFT +
-					(int)(d_objects[idx].bV.u_f_l.z / CELL_SIZE) << Z_SHIFT);
-		cellids[8*idx+2] = 0 << 31 + temp*(~(temp ^ (cellids[8*idx] & 0x7FFFFFFF))&1);
+		temp = ((uint8_t)(d_objects[idx].bV.u_f_l.x / CELL_SIZE) << X_SHIFT |
+					(uint8_t)(d_objects[idx].bV.u_f_l.y / CELL_SIZE) << Y_SHIFT |
+					(uint8_t)(d_objects[idx].bV.u_f_l.z / CELL_SIZE) << Z_SHIFT);
+		cellids[8*idx+2] = 1 | temp;
 		objectIds[8*idx+2] = idx;
 
-		temp = ((int)(d_objects[idx].bV.u_b_r.x / CELL_SIZE) << X_SHIFT + 
-					(int)(d_objects[idx].bV.u_b_r.y / CELL_SIZE) << Y_SHIFT +
-					(int)(d_objects[idx].bV.u_b_r.z / CELL_SIZE) << Z_SHIFT);
-		cellids[8*idx+3] = 0 << 31 + temp*(~(temp ^ (cellids[8*idx] & 0x7FFFFFFF))&1);
+		temp = ((uint8_t)(d_objects[idx].bV.u_b_r.x / CELL_SIZE) << X_SHIFT |
+					(uint8_t)(d_objects[idx].bV.u_b_r.y / CELL_SIZE) << Y_SHIFT |
+					(uint8_t)(d_objects[idx].bV.u_b_r.z / CELL_SIZE) << Z_SHIFT);
+		cellids[8*idx+3] = 1 | temp;
 		objectIds[8*idx+3] = idx;
 
-		temp = ((int)(d_objects[idx].bV.u_b_l.x / CELL_SIZE) << X_SHIFT + 
-					(int)(d_objects[idx].bV.u_b_l.y / CELL_SIZE) << Y_SHIFT +
-					(int)(d_objects[idx].bV.u_b_l.z / CELL_SIZE) << Z_SHIFT);
-		cellids[8*idx+4] = 0 << 31 + temp*(~(temp ^ (cellids[8*idx] & 0x7FFFFFFF))&1);
+		temp = ((uint8_t)(d_objects[idx].bV.u_b_l.x / CELL_SIZE) << X_SHIFT |
+					(uint8_t)(d_objects[idx].bV.u_b_l.y / CELL_SIZE) << Y_SHIFT |
+					(uint8_t)(d_objects[idx].bV.u_b_l.z / CELL_SIZE) << Z_SHIFT);
+		cellids[8*idx+4] = 1 | temp;
 		objectIds[8*idx+4] = idx;
 
-		temp = ((int)(d_objects[idx].bV.lo_f_r.x / CELL_SIZE) << X_SHIFT + 
-					(int)(d_objects[idx].bV.lo_f_r.y / CELL_SIZE) << Y_SHIFT +
-					(int)(d_objects[idx].bV.lo_f_r.z / CELL_SIZE) << Z_SHIFT);
-		cellids[8*idx+5] = 0 << 31 + temp*(~(temp ^ (cellids[8*idx] & 0x7FFFFFFF))&1);
+		temp = ((uint8_t)(d_objects[idx].bV.lo_f_r.x / CELL_SIZE) << X_SHIFT |
+					(uint8_t)(d_objects[idx].bV.lo_f_r.y / CELL_SIZE) << Y_SHIFT |
+					(uint8_t)(d_objects[idx].bV.lo_f_r.z / CELL_SIZE) << Z_SHIFT);
+		cellids[8*idx+5] = 1 | temp;
 		objectIds[8*idx+5] = idx;
 
-		temp = ((int)(d_objects[idx].bV.lo_f_l.x / CELL_SIZE) << X_SHIFT + 
-					(int)(d_objects[idx].bV.lo_f_l.y / CELL_SIZE) << Y_SHIFT +
-					(int)(d_objects[idx].bV.lo_f_l.z / CELL_SIZE) << Z_SHIFT);
-		cellids[8*idx+6] = 0 << 31 + temp*(~(temp ^ (cellids[8*idx] & 0x7FFFFFFF))&1);
+		temp = ((uint8_t)(d_objects[idx].bV.lo_f_l.x / CELL_SIZE) << X_SHIFT | 
+					(uint8_t)(d_objects[idx].bV.lo_f_l.y / CELL_SIZE) << Y_SHIFT |
+					(uint8_t)(d_objects[idx].bV.lo_f_l.z / CELL_SIZE) << Z_SHIFT);
+		cellids[8*idx+6] = 1 | temp;
 		objectIds[8*idx+6] = idx;
 
-		temp = ((int)(d_objects[idx].bV.lo_b_r.x / CELL_SIZE) << X_SHIFT + 
-					(int)(d_objects[idx].bV.lo_b_r.y / CELL_SIZE) << Y_SHIFT +
-					(int)(d_objects[idx].bV.lo_b_r.z / CELL_SIZE) << Z_SHIFT);
-		cellids[8*idx+7] = 0 << 31 + temp*(~(temp ^ (cellids[8*idx] & 0x7FFFFFFF))&1);
+		temp = ((uint8_t)(d_objects[idx].bV.lo_b_r.x / CELL_SIZE) << X_SHIFT |
+					(uint8_t)(d_objects[idx].bV.lo_b_r.y / CELL_SIZE) << Y_SHIFT |
+					(uint8_t)(d_objects[idx].bV.lo_b_r.z / CELL_SIZE) << Z_SHIFT);
+		cellids[8*idx+7] = 1 | temp;
 		objectIds[8*idx+7] = idx;
 	}
-
 	// temp = ((int)(d_objects[idx].bV.lo_b_l.x / CELL_SIZE) << X_SHIFT + 
 	// 			(int)(d_objects[idx].bV.lo_b_l.y / CELL_SIZE) << Y_SHIFT +
 	// 			(int)(d_objects[idx].bV.lo_b_l.z / CELL_SIZE) << Z_SHIFT);

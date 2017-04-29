@@ -8,7 +8,8 @@
 
 void launch_kernel(float4 *pos, Object* h_objects, Object* d_objects, float time, int n_vertices, int *D_CELLIDS, int *D_OBJECT_IDS)
 {
-    find_CellID(h_objects, D_CELLIDS, D_OBJECT_IDS, CELL_SIZE);
+    const clock_t begin_time = clock();
+    find_CellID(h_objects, D_CELLIDS, D_OBJECT_IDS, CELL_SIZE, OBJECT_COUNT);
     // for(int i = 0; i < 8*OBJECT_COUNT; i++){
     //     printf("cellid[%d]: %d , objecid[%d]: %d \n", i, D_CELLIDS[i], i, D_OBJECT_IDS[i]);
     // }
@@ -22,7 +23,13 @@ void launch_kernel(float4 *pos, Object* h_objects, Object* d_objects, float time
 
     float4 *pos_h = (float4 *)malloc(sizeof(float4)*n_vertices)    ;
     cudaMemcpy(pos_h, pos, sizeof(float4)*n_vertices, cudaMemcpyDeviceToHost);
-    bool result = gjk(pos_h, h_objects, 0, 1);
+    for ( int i = 0; i<v_cell_object_id.size(); i++)
+        for(int j = i+1; j<v_cell_object_id.size(); j++){
+            // printf("%d %d \n", i,j);
+            if(D_OBJECT_IDS[j] != D_OBJECT_IDS[j - 1])
+                gjk(pos_h, h_objects, D_OBJECT_IDS[i], D_OBJECT_IDS[j]);
+        }
+    
     // printf("%d\n", result );
     // printf("gjk done\n");
     int gridDim = ceil((float)n_vertices/BLOCK_DIM);
@@ -31,6 +38,7 @@ void launch_kernel(float4 *pos, Object* h_objects, Object* d_objects, float time
 
     run_vbo_kernel<<< grid1, block1>>>(pos, d_objects, time);
     free(pos_h);
+    printf("%f\n",float( clock () - begin_time ) /  CLOCKS_PER_SEC );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
