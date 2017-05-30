@@ -431,7 +431,8 @@ void deleteVBOAndIBO(GLuint *vbo, GLuint *ibo, struct cudaGraphicsResource *vbo_
     glDeleteBuffers(1, ibo);
 
     checkCudaErrors(cudaFree(D_OBJECTS));
-
+    free(CELLIDS);
+    free(OBJECT_IDS);
 
     *vbo = 0;
     *ibo = 0;
